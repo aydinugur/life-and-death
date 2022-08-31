@@ -1,0 +1,23 @@
+{
+  "name": "life-and-death",
+  "version": "1.0.0",
+  "description": "Game developed for js13k 2022.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aydinugur/life-and-death.git"
+  },
+  "author": "Uğur Aydın",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aydinugur/life-and-death/issues"
+  },
+  "homepage": "https://github.com/aydinugur/life-and-death#readme",
+  "devDependencies": {
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0"
+  }
+}
