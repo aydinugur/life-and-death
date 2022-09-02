@@ -1,8 +1,8 @@
-import kontra from './kontra.mjs';
+import {GameLoop, init, initGesture, initPointer, onGesture, Scene, Sprite} from './kontra.min.mjs';
 
-let {canvas} = kontra.init();
+let {canvas} = init();
 
-const sprite = kontra.Sprite({
+const sprite = Sprite({
     x: 100,        // starting x,y position of the sprite
     y: 80,
     color: 'black',  // fill color of the sprite rectangle
@@ -11,9 +11,17 @@ const sprite = kontra.Sprite({
     dx: 2          // move the sprite 2px to the right every frame
 });
 
-var loop = kontra.GameLoop({  // create the main game loop
+
+let mainScene = Scene(
+    {
+        id: 'main',
+        objects: [sprite]
+    }
+);
+
+var loop = GameLoop({  // create the main game loop
     update: function() {        // update the game state
-        sprite.update();
+        mainScene.update();
 
         // wrap the sprites position when it reaches
         // the edge of the screen
@@ -22,8 +30,16 @@ var loop = kontra.GameLoop({  // create the main game loop
         }
     },
     render: function() {        // render the game state
-        sprite.render();
+        mainScene.render();
     }
 });
 
 loop.start();
+
+initPointer();
+initGesture();
+
+onGesture('swipeleft', function () {
+    console.log("lol");
+    mainScene.hide();
+})

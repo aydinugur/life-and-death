@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta charset="utf-8"/>
+        <title>💥💥💥</title>
+        <!-- <link rel="icon" type="image/x-icon" href="./favicon.png"> -->
+        <style>
+            html,
+            body {
+                overflow: hidden;
+            }
+
+            body {
+                margin: 0;
+                background-color: rgba(6, 3, 3, 0.885);
+                /* background-color: #5FA299; */
+            }
+
+            .c canvas {
+                object-fit: contain;
+                max-height: 100%;
+                max-width: 100%;
+                touch-action: none;
+            }
+
+            .c {
+                position: fixed;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                /* background-color: #FFEA7E; */
+                background-color: #5FA299;
+                touch-action: none;
+            }
+
+            #gamepanel {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="c" id="gamepanel">
+            <canvas width=1080 height=1920 style="
+            border: 1px solid black;
+            background-color: rgba(72, 153, 197, 0.869);">
+            </canvas>
+        </div>
+        <!-- build:js inline -->
+        <script src="../dist/main.js"></script>
+        <!-- /build -->
+    </body>
+
+</html>
