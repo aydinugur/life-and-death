@@ -29,7 +29,7 @@ module.exports = function (grunt) {
                     }
                 },
                 files: {
-                    'dist/index.html': ['src/production.html']
+                    'dist/index.html': ['src/index.html']
                 }
             }
         },
@@ -38,11 +38,12 @@ module.exports = function (grunt) {
             main: {
                 files: [
                     {expand: true, flatten: true, src: ['src/images/*'], dest: 'dist/images'},
+                    {expand: true, flatten: true, src: ['src/index.html'], dest: 'dist'},
                 ],
             },
         },
 
-        clean: ['dist*//*.min.*']
+        clean: ['dist']
 
 
     });
@@ -68,5 +69,5 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-compress');
     grunt.loadNpmTasks('grunt-contrib-copy');
 
-    grunt.registerTask('default', ['copy', 'compress', 'processhtml', 'sizecheck', 'clean']);
+    grunt.registerTask('default', ['copy', 'compress', 'processhtml', 'sizecheck']);
 };
