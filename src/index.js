@@ -1,135 +1,223 @@
 import {
     Button,
     GameLoop,
+    imageAssets,
     init,
     initGesture,
     initKeys,
     initPointer,
     keyPressed,
-    onGesture,
-    onKey,
+    load,
     Scene,
-    Sprite
+    setImagePath,
+    Sprite,
+    SpriteSheet,
+    Text
 } from './kontra.min.mjs';
 
 let {canvas} = init();
 
-const sprite = Sprite({
-    x: canvas.width / 2,        // starting x,y position of the sprite
-    y: canvas.height,
-    anchor: {x: 0.5, y: 1},
-    color: 'cyan',  // fill color of the sprite rectangle
-    width: 60,     // width and height of the sprite rectangle
-    height: 120,
-    dx: 0,          // move the sprite 2px to the right every frame
-    ddx: 0,
-    update: function () {
-        this.advance();
-        if (keyPressed('arrowleft' || 'a')) {
-            console.log('arrowleft, a');
-            this.ddx = -0.3;
-        } else if (keyPressed('arrowright' || 'a')) {
-            this.ddx = 0.3;
-        } else {
-            this.ddx = 0;
-            this.dx = 0;
+setImagePath("images");
+
+function initGame() {
+
+    let lastDirection = 0;
+
+    const jellySpriteSheet = SpriteSheet({
+        image: imageAssets['jelly_spritesheet'],
+        frameWidth: 10,
+        frameHeight: 6,
+        animations: {
+            // create a named animation: walk
+            walk_right: {
+                frames: [0, 1],
+                frameRate: 5
+            },
+            walk_left: {
+                frames: [2, 3],
+                frameRate: 5
+            },
+            idle_left: {
+                // a single frame
+                frames: 0
+            },
+            idle_right: {
+                // a single frame
+                frames: 2
+            }
         }
+    });
+    const sprite = Sprite({
+        x: canvas.width / 2,        // starting x,y position of the sprite
+        y: canvas.height,
+        anchor: {x: 0.5, y: 1},
+        // color: 'cyan',  // fill color of the sprite rectangle
+        // width: 60,     // width and height of the sprite rectangle
+        // height: 120,
+        scaleX: 10,
+        scaleY: 10,
+        dx: 0,
+        ddx: 0,
+        animations: jellySpriteSheet.animations,
+        update: function () {
+            this.advance();
+            if (keyPressed('arrowleft') || keyPressed('a')) {
+                lastDirection = 0;
+                this.playAnimation('walk_right');
+                if (this.x < 54) {
+                    this.ddx = 0;
+                    this.dx = 0;
+                } else {
+                    this.ddx = -ddx;
+                }
+            } else if (keyPressed('arrowright' || 'a') || keyPressed('d')) {
+                lastDirection = 1;
+                if (this.x > canvas.width - 52) {
+                    this.ddx = 0;
+                    this.dx = 0;
+                } else {
+                    this.ddx = ddx;
+                }
+                this.playAnimation('walk_left');
+            } else if (lastDirection === 0 || lastDirection === 1){
+                this.ddx = 0;
+                if (this.dx !== 0) {
+                    this.dx /= 1.1;
+                    if (Math.abs(this.dx) < 0.001) {
+                        this.dx = 0;
+                    }
+                }
+                this.playAnimation(lastDirection === 0 ? 'idle_left' : 'idle_right');
+            }
+        }
+    });
 
-        // offKey('arrowleft');
-        // if (offKey('arrowleft')) {
-        //     console.log("kaldirr be meyh");
-        //     this.ddx = 0;
-        // }
-    }
-});
-
-let survivalScene = Scene(
-    {
-        id: 'survival',
-        hidden: true
-    }
-);
-
-survivalScene.add(sprite);
-
-let menuScene = Scene(
-    {
-        id: 'main'
-    }
-);
-
-initPointer();
-
-let button = Button({
-    // sprite properties
-    x: canvas.width / 2,
-    y: canvas.height / 2,
-    scaleX: 4,
-    scaleY: 4,
-    anchor: {x: 0.5, y: 0.5},
-
-    // text properties
-    text: {
-        text: 'BAŞLA',
+    let text = Text({
+        text: 'Git!\nLen!',
+        font: '48px Arial',
         color: 'white',
-        font: '20px Arial, sans-serif',
-        anchor: {x: 0.5, y: 0.5}
-    },
-    onDown() {
-        console.log("clicked");
-        menuScene.hide();
-        survivalScene.show();
-    },
-    onOver() {
-        this.textNode.color = 'red';
-        canvas.style.cursor = 'pointer';
-    },
-    onOut() {
-        this.textNode.color = 'white';
-        canvas.style.cursor = 'initial';
-    },
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        anchor: {x: 0.5, y: 0.5},
+        textAlign: 'center'
+    });
 
-    // button properties
-    padX: 20,
-    padY: 10,
-});
-
-menuScene.add(button);
-
-var loop = GameLoop({  // create the main game loop
-    update: function () {        // update the game state
-        menuScene.update();
-        survivalScene.update();
-        // sprite.update();
-        // wrap the sprites position when it reaches
-        // the edge of the screen
-        if (sprite.x > canvas.width) {
-            sprite.x = -sprite.width;
+    let survivalScene = Scene(
+        {
+            id: 'survival',
+            hidden: true
         }
-    },
-    render: function () {        // render the game state
-        menuScene.render();
-        survivalScene.render();
-        // sprite.render();
+    );
+
+    survivalScene.add(sprite);
+    survivalScene.add(text);
+
+    let menuScene = Scene(
+        {
+            id: 'main'
+        }
+    );
+
+    initPointer();
+
+    let button = Button({
+        // sprite properties
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        scaleX: 4,
+        scaleY: 4,
+        anchor: {x: 0.5, y: 0.5},
+
+        // text properties
+        text: {
+            text: 'BAŞLA',
+            color: 'white',
+            font: '20px Arial, sans-serif',
+            anchor: {x: 0.5, y: 0.5}
+        },
+        onDown() {
+            document.ontouchmove = (evt) => {
+                evt.preventDefault();
+                if (x > evt.changedTouches[0].clientX) {
+                    sprite.playAnimation('walk_right');
+                    lastDirection = -1;
+                    if (sprite.x < 54) {
+                        sprite.ddx = 0;
+                        sprite.dx = 0;
+                    } else {
+                        sprite.ddx = -ddx;
+                    }
+                } else if (x < evt.changedTouches[0].clientX) {
+                    lastDirection = 2;
+                    sprite.playAnimation('walk_left');
+                    if (sprite.x > canvas.width - 52) {
+                        sprite.ddx = 0;
+                        sprite.dx = 0;
+                    } else {
+                        sprite.ddx = ddx;
+                    }
+                } else {
+                    sprite.ddx = 0;
+                }
+            }
+            menuScene.hide();
+            survivalScene.show();
+        },
+        onOver() {
+            this.textNode.color = 'red';
+            canvas.style.cursor = 'pointer';
+        },
+        onOut() {
+            this.textNode.color = 'white';
+            canvas.style.cursor = 'initial';
+        },
+
+        // button properties
+        padX: 20,
+        padY: 10,
+    });
+
+    menuScene.add(button);
+
+    var loop = GameLoop({  // create the main game loop
+        update: function () {        // update the game state
+            menuScene.update();
+            survivalScene.update();
+            // sprite.update();
+            // wrap the sprites position when it reaches
+            // the edge of the screen
+            if (sprite.x > canvas.width) {
+                sprite.x = -sprite.width;
+            }
+        },
+        render: function () {        // render the game state
+            menuScene.render();
+            survivalScene.render();
+            // sprite.render();
+        }
+    });
+
+    initGesture();
+    initKeys();
+
+    let x;
+    const ddx = 0.3;
+
+    document.ontouchstart = (evt) => {
+        evt.preventDefault();
+        x = evt.changedTouches[0].clientX;
     }
-});
 
-loop.start();
+    document.ontouchend = (evt) => {
+        lastDirection = lastDirection === -1 ? 0 : 1;
+        x = evt.changedTouches[0].clientX;
+    }
 
-initGesture();
-initKeys();
+    loop.start();
+}
 
-onGesture('swipeleft', function () {
-    console.log("swipe");
-    sprite.ddx = -0.3;
-})
-
-onKey('arrowleft' || 'swipeleft', function () {
-    // console.log("arrow or swipe");
-    // sprite.ddx = -0.3;
-})
-
-onKey('arrowright', function () {
-    console.log("right");
-    sprite.ddx = 0.3;
-})
+load('jelly_spritesheet.png').then(
+    function () {
+        initGame();
+    }
+)
