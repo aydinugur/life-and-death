@@ -24,7 +24,8 @@ setImagePath("images");
 function initGame() {
 
     let lastDirection = 0;
-    let health = 3;
+    let health = 2;
+    let score = 0;
 
     const jellySpriteSheet = SpriteSheet({
         image: imageAssets['jelly_spritesheet'],
@@ -89,13 +90,36 @@ function initGame() {
         }
     });
 
-    const text = Text({
-        text: 'XXX',
-        font: '48px Arial',
-        color: 'white',
+    const healthHearts = [Sprite({
+        image: imageAssets["heart"],
         x: canvas.width,
         y: 0,
+        scaleX: 4,
+        scaleY: 4,
         anchor: {x: 1, y: 0},
+    }), Sprite({
+        image: imageAssets["heart"],
+        x: canvas.width - imageAssets["heart"].width * 4,
+        y: 0,
+        scaleX: 4,
+        scaleY: 4,
+        anchor: {x: 1, y: 0},
+    }), Sprite({
+        image: imageAssets["heart"],
+        x: canvas.width - imageAssets["heart"].width * 2 * 4,
+        y: 0,
+        scaleX: 4,
+        scaleY: 4,
+        anchor: {x: 1, y: 0},
+    })];
+
+    const heading = Text({
+        text: 'You are a nasty cell that\n wants to survive and find your way through to the world!\n Press Start to feed yourself!',
+        font: '36px Arial',
+        color: 'black',
+        x: canvas.width / 2,
+        y: canvas.height / 4,
+        anchor: {x: 0.5, y: 0.5},
         textAlign: 'center'
     });
 
@@ -117,7 +141,7 @@ function initGame() {
     );
 
     survivalScene.add(sprite);
-    survivalScene.add(text);
+    survivalScene.add(healthHearts);
     survivalScene.add(status);
 
     const menuScene = Scene(
@@ -126,9 +150,52 @@ function initGame() {
         }
     );
 
+    const restartScene = Scene(
+        {
+            id: 'restart',
+            hidden: true
+        }
+    );
+
+    menuScene.add(heading);
+
     initPointer();
 
-    let button = Button({
+    const restartButton = Button({
+        x: canvas.width / 2,
+        y: canvas.height / 4,
+        scaleX: 4,
+        scaleY: 4,
+        anchor: {x: 0.5, y: 0.5},
+
+        text: {
+            text: 'START AGAIN',
+            color: 'white',
+            font: '20px Arial, sans-serif',
+            anchor: {x: 0.5, y: 0.5}
+        },
+        onDown() {
+            flag = true;
+            status.text = '';
+            restartScene.hide();
+
+            for (let i = 0; i < 3; i++) {
+                healthHearts[i].image = imageAssets["heart"];
+            }
+        },
+        onOver() {
+            this.textNode.color = 'red';
+            canvas.style.cursor = 'pointer';
+        },
+        onOut() {
+            this.textNode.color = 'white';
+            canvas.style.cursor = 'initial';
+        },
+    });
+
+    restartScene.add(restartButton);
+
+    const button = Button({
         x: canvas.width / 2,
         y: canvas.height / 2,
         scaleX: 4,
@@ -169,8 +236,6 @@ function initGame() {
             }
             menuScene.hide();
             survivalScene.show();
-            startPoisons();
-            startFoods();
         },
         onOver() {
             this.textNode.color = 'red';
@@ -251,36 +316,50 @@ function initGame() {
             survivalScene.update();
             poisonPool.update();
             foodPool.update();
+            restartScene.update();
+
+            function resetGame(element) {
+                flag = false;
+                poisonPool.clear();
+                foodPool.clear();
+                if (health < 0) {
+                    const poison = element.image.currentSrc.split('/').pop();
+                    status.text = endings[poison];
+                } else {
+                    status.text = 'Perfect!\nYou made it to ovary\nBut it was just the beginning of the journey';
+                }
+                health = 2;
+                score = 0;
+                restartScene.show();
+            }
 
             poisonPool.objects.forEach(element => {
+
                 if (collides(element, sprite)) {
-                    text.text = text.text.substring(1);
+                    healthHearts[health].image = imageAssets['blank_heart'];
                     health--;
                     element.y = canvas.height + 50;
+                    if (health < 0) {
+                        resetGame(element);
+                    }
                 }
             });
 
             foodPool.objects.forEach(element => {
                 if (collides(element, sprite)) {
-                    text.text += 'X';
-                    health += 1;
+                    if (++score > 9) {
+                        resetGame(element);
+                    }
                     element.y = canvas.height + 50;
                 }
             });
-
-            if (health === 0 || health > 9) {
-                flag = false;
-                poisonPool.clear();
-                foodPool.clear();
-                loop.stop();
-                status.text = health === 0 ? 'GAME OVVER' : 'CONGRATS MATE!';
-            }
 
         },
         render: function () {
             menuScene.render();
             survivalScene.render();
             poisonPool.render();
+            restartScene.render();
             foodPool.render();
         }
     });
@@ -301,6 +380,8 @@ function initGame() {
         x = evt.changedTouches[0].clientX;
     }
 
+    startPoisons();
+    startFoods();
     loop.start();
 }
 
@@ -314,7 +395,12 @@ function getRandomFoodImage() {
     return imageAssets[names[Math.floor(Math.random() * names.length)]];
 }
 
-load('jelly_spritesheet.png', 'baby_spritesheet.png' ,'condom.png', 'pill.png', 'handcuff.png', 'heart.png', 'lip.png', 'rabbit_ears.png').then(
+const endings = {
+    'condom.png': 'Oh no!\nYou were just dumped into a dirty condom\nand thrown away!',
+    'pill.png': 'Oh no\n Your destination just got\na couple of birth control pills ):',
+}
+
+load('jelly_spritesheet.png', 'blank_heart.png', 'baby_spritesheet.png', 'condom.png', 'pill.png', 'handcuff.png', 'heart.png', 'lip.png', 'rabbit_ears.png').then(
     function () {
         initGame();
     }
