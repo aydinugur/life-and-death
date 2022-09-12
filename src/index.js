@@ -1,5 +1,6 @@
 import {
     Button,
+    collides,
     GameLoop,
     imageAssets,
     init,
@@ -8,6 +9,7 @@ import {
     initPointer,
     keyPressed,
     load,
+    Pool,
     Scene,
     setImagePath,
     Sprite,
@@ -22,13 +24,13 @@ setImagePath("images");
 function initGame() {
 
     let lastDirection = 0;
+    let health = 3;
 
     const jellySpriteSheet = SpriteSheet({
         image: imageAssets['jelly_spritesheet'],
         frameWidth: 10,
         frameHeight: 6,
         animations: {
-            // create a named animation: walk
             walk_right: {
                 frames: [0, 1],
                 frameRate: 5
@@ -38,11 +40,9 @@ function initGame() {
                 frameRate: 5
             },
             idle_left: {
-                // a single frame
                 frames: 0
             },
             idle_right: {
-                // a single frame
                 frames: 2
             }
         }
@@ -51,9 +51,6 @@ function initGame() {
         x: canvas.width / 2,        // starting x,y position of the sprite
         y: canvas.height,
         anchor: {x: 0.5, y: 1},
-        // color: 'cyan',  // fill color of the sprite rectangle
-        // width: 60,     // width and height of the sprite rectangle
-        // height: 120,
         scaleX: 10,
         scaleY: 10,
         dx: 0,
@@ -79,7 +76,7 @@ function initGame() {
                     this.ddx = ddx;
                 }
                 this.playAnimation('walk_left');
-            } else if (lastDirection === 0 || lastDirection === 1){
+            } else if (lastDirection === 0 || lastDirection === 1) {
                 this.ddx = 0;
                 if (this.dx !== 0) {
                     this.dx /= 1.1;
@@ -92,8 +89,18 @@ function initGame() {
         }
     });
 
-    let text = Text({
-        text: 'Git!\nLen!',
+    const text = Text({
+        text: 'XXX',
+        font: '48px Arial',
+        color: 'white',
+        x: canvas.width,
+        y: 0,
+        anchor: {x: 1, y: 0},
+        textAlign: 'center'
+    });
+
+    const status = Text({
+        text: '',
         font: '48px Arial',
         color: 'white',
         x: canvas.width / 2,
@@ -102,7 +109,7 @@ function initGame() {
         textAlign: 'center'
     });
 
-    let survivalScene = Scene(
+    const survivalScene = Scene(
         {
             id: 'survival',
             hidden: true
@@ -111,8 +118,9 @@ function initGame() {
 
     survivalScene.add(sprite);
     survivalScene.add(text);
+    survivalScene.add(status);
 
-    let menuScene = Scene(
+    const menuScene = Scene(
         {
             id: 'main'
         }
@@ -121,21 +129,20 @@ function initGame() {
     initPointer();
 
     let button = Button({
-        // sprite properties
         x: canvas.width / 2,
         y: canvas.height / 2,
         scaleX: 4,
         scaleY: 4,
         anchor: {x: 0.5, y: 0.5},
 
-        // text properties
         text: {
-            text: 'BAŞLA',
+            text: 'START',
             color: 'white',
             font: '20px Arial, sans-serif',
             anchor: {x: 0.5, y: 0.5}
         },
         onDown() {
+            flag = true;
             document.ontouchmove = (evt) => {
                 evt.preventDefault();
                 if (x > evt.changedTouches[0].clientX) {
@@ -162,6 +169,8 @@ function initGame() {
             }
             menuScene.hide();
             survivalScene.show();
+            startPoisons();
+            startFoods();
         },
         onOver() {
             this.textNode.color = 'red';
@@ -172,28 +181,107 @@ function initGame() {
             canvas.style.cursor = 'initial';
         },
 
-        // button properties
         padX: 20,
         padY: 10,
     });
 
     menuScene.add(button);
 
-    var loop = GameLoop({  // create the main game loop
+    const poisonPool = Pool({
+        create: Sprite
+    });
+
+    const foodPool = Pool({
+        create: Sprite
+    });
+
+    let flag = false;
+
+    function startPoisons() {
+        let timer = null;
+        let func = () => {
+            timer = setTimeout(() => {
+                const ddy = Math.random();
+
+                if (flag) {
+                    poisonPool.get({
+                        x: Math.random() * canvas.width,
+                        // x: canvas.width / 2,
+                        y: 0,
+                        scaleX: 10,
+                        scaleY: 10,
+                        ddy: ddy,
+                        image: getRandomPoisonImage(),
+                        ttl: 620
+                    });
+                }
+                func();
+            }, 850);
+        };
+        timer = setTimeout(func, 20);
+    }
+
+    function startFoods() {
+        let timer = null;
+        let func = () => {
+            timer = setTimeout(() => {
+                let ddy = Math.random();
+
+                if (flag) {
+                    foodPool.get({
+                        x: Math.random() * canvas.width,
+                        // x: canvas.width / 2,
+                        y: 0,
+                        scaleX: 10,
+                        scaleY: 10,
+                        ddy: ddy,
+                        image: getRandomFoodImage(),
+                        ttl: 620
+                    });
+                }
+                func();
+            }, 3000);
+        };
+        timer = setTimeout(func, 20);
+    }
+
+    const loop = GameLoop({  // create the main game loop
         update: function () {        // update the game state
             menuScene.update();
             survivalScene.update();
-            // sprite.update();
-            // wrap the sprites position when it reaches
-            // the edge of the screen
-            if (sprite.x > canvas.width) {
-                sprite.x = -sprite.width;
+            poisonPool.update();
+            foodPool.update();
+
+            poisonPool.objects.forEach(element => {
+                if (collides(element, sprite)) {
+                    text.text = text.text.substring(1);
+                    health--;
+                    element.y = canvas.height + 50;
+                }
+            });
+
+            foodPool.objects.forEach(element => {
+                if (collides(element, sprite)) {
+                    text.text += 'X';
+                    health += 1;
+                    element.y = canvas.height + 50;
+                }
+            });
+
+            if (health === 0 || health > 9) {
+                flag = false;
+                poisonPool.clear();
+                foodPool.clear();
+                loop.stop();
+                status.text = health === 0 ? 'GAME OVVER' : 'CONGRATS MATE!';
             }
+
         },
-        render: function () {        // render the game state
+        render: function () {
             menuScene.render();
             survivalScene.render();
-            // sprite.render();
+            poisonPool.render();
+            foodPool.render();
         }
     });
 
@@ -216,7 +304,17 @@ function initGame() {
     loop.start();
 }
 
-load('jelly_spritesheet.png').then(
+function getRandomPoisonImage() {
+    let names = ['condom', 'pill'];
+    return imageAssets[names[Math.floor(Math.random() * names.length)]];
+}
+
+function getRandomFoodImage() {
+    let names = ['handcuff', 'heart', 'lip', 'rabbit_ears'];
+    return imageAssets[names[Math.floor(Math.random() * names.length)]];
+}
+
+load('jelly_spritesheet.png', 'baby_spritesheet.png' ,'condom.png', 'pill.png', 'handcuff.png', 'heart.png', 'lip.png', 'rabbit_ears.png').then(
     function () {
         initGame();
     }
